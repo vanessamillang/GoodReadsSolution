@@ -103,3 +103,5 @@ términos de la búsqueda entre otras variables.
 * Puedes agregegar otros elementos a la página, imágenes, etc.
 * Es importante *no* darle estilo a la página.
 
+### LINK DE VIDEO
+https://loom.com/share/folder/242ac62c63734b0699136dd95aeb6d33
