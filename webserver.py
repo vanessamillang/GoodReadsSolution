@@ -25,7 +25,7 @@ class WebRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.end_headers()
         books = None
-        search_query = self.query_data.get('q', '')  # Obtener la palabra buscada (si se proporcionó)
+        search_query = self.query_data.get('q', '')  
         if search_query:
             books = self.search_books(search_query.split(' '))
         self.wfile.write(self.get_response(search_query, books).encode("utf-8"))
@@ -36,10 +36,10 @@ class WebRequestHandler(BaseHTTPRequestHandler):
 
     def get_response(self, search_query, books):
         response_html = """
-        <h1> Hola Web </h1>
+        <h1> Navegador de búsqueda </h1>
         <form action="/" method="get">
               <label for="q"> Búsqueda </label>
-              <input type="text" name="q" required value="{}"/> <!-- Mostrar la palabra buscada -->
+              <input type="text" name="q" required value="{}"/> 
               <input type="submit" value="Buscar"/>
         </form>
 
@@ -51,7 +51,7 @@ class WebRequestHandler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     try:
         r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
-        r.ping()  # Comprobar la conexión a Redis
+        r.ping() 
     except redis.ConnectionError:
         print("Error: No se puede conectar a Redis. Asegúrate de que esté en ejecución en {}:{}".format(REDIS_HOST, REDIS_PORT))
     else:
