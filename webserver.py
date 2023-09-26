@@ -4,8 +4,12 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qsl, urlparse
 import redis
 
-
-r = redis.Redis(host='localhost', port=6379, db=0)
+# Configuración
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_DB = 0
+SERVER_HOST = '0.0.0.0'
+SERVER_PORT = 8000
 
 class WebRequestHandler(BaseHTTPRequestHandler):
     @cached_property
@@ -18,28 +22,39 @@ class WebRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         self.send_response(200)
-        self.send_header("Content-Type", "text/html")
+        self.send_header("Content-Type", "text/html; charset=utf-8")
         self.end_headers()
-        books= None
-        if self.query_data and 'q' in self.query_data:
-            books= r.sinter(self.query_data['q'].split(' '))
-        self.wfile.write(self.get_response(books).encode("utf-8"))
+        books = None
+        search_query = self.query_data.get('q', '')  # Obtener la palabra buscada (si se proporcionó)
+        if search_query:
+            books = self.search_books(search_query.split(' '))
+        self.wfile.write(self.get_response(search_query, books).encode("utf-8"))
 
-    def get_response(self,books):
-        return f"""
-    <h1> Hola Web </h1>
-    <form action="/" method="get">
-          <label for="q"> Busqueda </label>
-          <input type="text" name="q" required/>
-          
-    </form>
+    def search_books(self, keywords):
+        r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
+        return r.sinter(keywords)
 
-    <p>  {self.query_data}   </p>
-    <p>  {books}   </p>
-"""
+    def get_response(self, search_query, books):
+        response_html = """
+        <h1> Hola Web </h1>
+        <form action="/" method="get">
+              <label for="q"> Búsqueda </label>
+              <input type="text" name="q" required value="{}"/> <!-- Mostrar la palabra buscada -->
+              <input type="submit" value="Buscar"/>
+        </form>
 
+        <p> Resultado de la búsqueda para "{}": {} </p>
+        """.format(search_query, search_query, books if books else "No se encontraron resultados")
+
+        return response_html
 
 if __name__ == "__main__":
-    print("Server starting...")
-    server = HTTPServer(("0.0.0.0", 8000), WebRequestHandler)
-    server.serve_forever()
+    try:
+        r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
+        r.ping()  # Comprobar la conexión a Redis
+    except redis.ConnectionError:
+        print("Error: No se puede conectar a Redis. Asegúrate de que esté en ejecución en {}:{}".format(REDIS_HOST, REDIS_PORT))
+    else:
+        print(f"Server starting on {SERVER_HOST}:{SERVER_PORT}...")
+        server = HTTPServer((SERVER_HOST, SERVER_PORT), WebRequestHandler)
+        server.serve_forever()
